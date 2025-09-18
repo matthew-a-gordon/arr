@@ -107,21 +107,19 @@ The stack uses selective VPN routing - only download clients use the VPN while m
    nano .env
    ```
 
-   **Secure Credential Setup:**
+   **NordVPN Service Credentials Setup:**
    ```bash
-   # Create secure directory for credentials
-   sudo mkdir -p /etc/docker/secrets
+   # 1. Get Service Credentials from NordVPN Dashboard
+   # Visit: https://my.nordaccount.com/dashboard/nordvpn/
+   # Click: Manual Setup → Generate Service Credentials
+   # Copy the Service Username and Service Password (NOT your login credentials)
 
-   # Store NordVPN credentials securely (replace with your actual credentials)
-   echo "your_nordvpn_username" | sudo tee /etc/docker/secrets/nordvpn_user
-   echo "your_nordvpn_password" | sudo tee /etc/docker/secrets/nordvpn_pass
+   # 2. Edit .env file with service credentials
+   nano .env
 
-   # Set secure permissions (only root can read)
-   sudo chmod 600 /etc/docker/secrets/nordvpn_*
-   sudo chown root:root /etc/docker/secrets/nordvpn_*
-
-   # Verify files are created correctly
-   sudo ls -la /etc/docker/secrets/
+   # Add your service credentials:
+   # NORDVPN_SERVICE_USER=a1b2c3d4e5f6g7h8
+   # NORDVPN_SERVICE_PASS=AbCdEf9876543210
    ```
 
 3. **Deploy Stack**
@@ -445,42 +443,42 @@ docker logs jellyfin | grep -i "hardware\|nvenc\|cuda"
 - **Local Management**: Admin interfaces remain locally accessible
 
 ### Credential Security
-This setup implements secure credential storage following security best practices:
+This setup uses **NordVPN Service Credentials** instead of your main account login for improved security:
 
-**What We Avoid:**
-- ❌ Plain-text passwords in `.env` files
-- ❌ Credentials in version control
-- ❌ World-readable credential files
-- ❌ Credentials in container environment variables
+**Security Benefits:**
+- ✅ **Separate from main account** - not your email/password
+- ✅ **VPN-specific credentials** - can't access billing/account settings
+- ✅ **Easily rotated** - generate new ones anytime from dashboard
+- ✅ **Limited scope** - only for VPN connections
+- ✅ **No financial access** - can't make purchases or changes
 
-**Security Implementation:**
-- ✅ Credentials stored in `/etc/docker/secrets/` (root-only access)
-- ✅ File-based authentication (not environment variables)
-- ✅ Secure file permissions (600, root:root)
-- ✅ Credentials isolated from application code
-
-**File Locations:**
-```
-/etc/docker/secrets/
-├── nordvpn_user    (600, root:root)
-└── nordvpn_pass    (600, root:root)
-```
-
-**Rotation Procedure:**
+**What We Use vs. Avoid:**
 ```bash
-# Update credentials securely
-echo "new_username" | sudo tee /etc/docker/secrets/nordvpn_user
-echo "new_password" | sudo tee /etc/docker/secrets/nordvpn_pass
+❌ Main Account:      your.email@example.com / your_main_password
+✅ Service Creds:     a1b2c3d4e5f6g7h8 / AbCdEf9876543210
+```
 
-# Restart VPN container to use new credentials
+**Getting Service Credentials:**
+1. Visit https://my.nordaccount.com/dashboard/nordvpn/
+2. Click "Manual Setup" or "Service Credentials"
+3. Generate/copy the **Service Username** and **Service Password**
+4. These are random strings, not your login credentials
+
+**Credential Rotation:**
+```bash
+# Generate new service credentials in NordVPN dashboard
+# Update .env file with new credentials
+nano .env
+
+# Restart VPN container
 docker-compose restart gluetun
 ```
 
-**Backup Security:**
-When backing up the system, ensure credential files are:
-- Either excluded from backups, or
-- Encrypted with strong encryption if included
-- Never stored in plain text on backup media
+**Why This Is Secure:**
+- Service credentials can't access your NordVPN account
+- They can be instantly revoked from the dashboard
+- They're separate from your payment/personal information
+- Much safer than using your main account credentials
 
 ## Common Commands
 
