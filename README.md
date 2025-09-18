@@ -21,7 +21,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
 │  ├─ Jellyfin (8096) - Media Server       │
 │  ├─ Sonarr (8989) - TV Management        │
 │  ├─ Radarr (7878) - Movie Management     │
-│  └─ Overseerr (5055) - Requests          │
+│  └─ Jellyseerr (5055) - Requests         │
 └────────────────────────────────────────────┘
 
 ┌─ VPN Network (via Gluetun) ───────────────┐
@@ -38,7 +38,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
 - **Jellyfin**: Media server with local and remote access
 - **Sonarr**: Automatic TV show downloading and organization
 - **Radarr**: Automatic movie downloading and organization
-- **Overseerr**: User-friendly request interface (optional)
+- **Jellyseerr**: User-friendly request interface (optional)
 
 **Download Services (VPN Network)**
 - **Gluetun**: NordVPN client providing secure tunnel
@@ -58,7 +58,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
 │  ├─ sonarr/
 │  ├─ radarr/
 │  ├─ jellyfin/
-│  └─ overseerr/
+│  └─ jellyseerr/
 ├─ downloads/
 │  ├─ incomplete/     # Active downloads
 │  ├─ complete/       # Finished downloads
@@ -98,7 +98,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
    cd arr
 
    # Create directory structure (if not already done)
-   mkdir -p /data/arr/{config/{gluetun,qbittorrent,sabnzbd,prowlarr,sonarr,radarr,jellyfin,overseerr},downloads/{incomplete,complete/{movies,tv},watch},media/{movies,tv},logs}
+   mkdir -p /data/arr/{config/{gluetun,qbittorrent,sabnzbd,prowlarr,sonarr,radarr,jellyfin,jellyseerr},downloads/{incomplete,complete/{movies,tv},watch},media/{movies,tv},logs}
 
    # Copy environment template
    cp .env.example .env
@@ -141,7 +141,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
    - Access qBittorrent at `http://localhost:8080` (default: admin/adminadmin)
    - Access SABnzbd at `http://localhost:8081`
    - Access Prowlarr at `http://localhost:9696`
-   - Access Overseerr at `http://localhost:5055` (optional)
+   - Access Jellyseerr at `http://localhost:5055` (optional)
 
 ## Usenet Configuration
 
@@ -242,7 +242,7 @@ Access Radarr at `http://localhost:7878`:
 
 Once configured, the complete automation workflow is:
 
-1. **Request**: Add TV show in Sonarr or movie in Radarr (or via Overseerr)
+1. **Request**: Add TV show in Sonarr or movie in Radarr (or via Jellyseerr)
 2. **Search**: Sonarr/Radarr automatically search indexers via Prowlarr
 3. **Download**: Best match sent to SABnzbd for downloading via VPN
 4. **Extract**: SABnzbd downloads and extracts to `/downloads/complete/`
