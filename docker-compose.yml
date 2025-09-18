@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # VPN Gateway - All download traffic routes through this
   gluetun:
@@ -135,9 +133,9 @@ services:
               capabilities: [gpu]
 
   # Request Management (Host Network) - Optional
-  overseerr:
-    image: lscr.io/linuxserver/overseerr:latest
-    container_name: overseerr
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
     restart: unless-stopped
     ports:
       - "5055:5055"
@@ -146,7 +144,7 @@ services:
       - PGID=1000
       - TZ=${TZ}
     volumes:
-      - /data/arr/config/overseerr:/config
+      - /data/arr/config/jellyseerr:/app/config
 
 networks:
   default:
