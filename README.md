@@ -5,7 +5,7 @@ A Docker-based *arr stack for automated media downloading and management with se
 ## Overview
 
 This setup provides:
-- **Automated Content Discovery**: TV shows and movies via Sonarr/Radarr
+- **Automated Content Discovery**: TV shows, movies, and books via Sonarr/Radarr/Readarr
 - **Secure Downloads**: All BitTorrent/Usenet traffic routed through NordVPN
 - **Media Streaming**: Jellyfin accessible locally and remotely
 - **Dynamic IP Support**: Works with Comcast cable internet (no static IP required)
@@ -14,30 +14,32 @@ This setup provides:
 
 ### Network Design
 
-The stack uses selective VPN routing - only download clients use the VPN while media streaming and management remain on the local network:
+The stack uses selective VPN routing - only download clients use the VPN while media streaming and management remain on the bridge network:
 
 ```
-┌─ Host Network ────────────────────────────┐
+┌─ Bridge Network (arr_network) ────────────┐
 │  ├─ Jellyfin (8096) - Media Server       │
 │  ├─ Sonarr (8989) - TV Management        │
 │  ├─ Radarr (7878) - Movie Management     │
+│  ├─ Readarr (8787) - Book Management     │
 │  └─ Jellyseerr (5055) - Requests         │
 └────────────────────────────────────────────┘
 
 ┌─ VPN Network (via Gluetun) ───────────────┐
 │  ├─ Gluetun - NordVPN Client             │
 │  ├─ qBittorrent (8080) - Torrents        │
-│  ├─ SABnzbd (8080) - Usenet              │
+│  ├─ SABnzbd (8085) - Usenet              │
 │  └─ Prowlarr (9696) - Indexers           │
 └────────────────────────────────────────────┘
 ```
 
 ### Services
 
-**Media Management (Host Network)**
+**Media Management (Bridge Network)**
 - **Jellyfin**: Media server with local and remote access
 - **Sonarr**: Automatic TV show downloading and organization
 - **Radarr**: Automatic movie downloading and organization
+- **Readarr**: Automatic book downloading and organization
 - **Jellyseerr**: User-friendly request interface (optional)
 
 **Download Services (VPN Network)**
@@ -57,17 +59,20 @@ The stack uses selective VPN routing - only download clients use the VPN while m
 │  ├─ prowlarr/
 │  ├─ sonarr/
 │  ├─ radarr/
+│  ├─ readarr/
 │  ├─ jellyfin/
 │  └─ jellyseerr/
 ├─ downloads/
 │  ├─ incomplete/     # Active downloads
 │  ├─ complete/       # Finished downloads
 │  │  ├─ movies/
-│  │  └─ tv/
+│  │  ├─ tv/
+│  │  └─ books/
 │  └─ watch/          # Manual additions
 ├─ media/
 │  ├─ movies/         # Organized movie library
-│  └─ tv/             # Organized TV library
+│  ├─ tv/             # Organized TV library
+│  └─ books/          # Organized book library
 └─ logs/              # Application logs
 ```
 
@@ -98,7 +103,7 @@ The stack uses selective VPN routing - only download clients use the VPN while m
    cd arr
 
    # Create directory structure (if not already done)
-   mkdir -p /data/arr/{config/{gluetun,qbittorrent,sabnzbd,prowlarr,sonarr,radarr,jellyfin,jellyseerr},downloads/{incomplete,complete/{movies,tv},watch},media/{movies,tv},logs}
+   mkdir -p /data/arr/{config/{gluetun,qbittorrent,sabnzbd,prowlarr,sonarr,radarr,readarr,jellyfin,jellyseerr},downloads/{incomplete,complete/{movies,tv,books},watch},media/{movies,tv,books},logs}
 
    # Copy environment template
    cp .env.example .env
@@ -137,9 +142,10 @@ The stack uses selective VPN routing - only download clients use the VPN while m
 4. **Initial Setup**
    - Access Sonarr at `http://localhost:8989`
    - Access Radarr at `http://localhost:7878`
+   - Access Readarr at `http://localhost:8787`
    - Access Jellyfin at `http://localhost:8096`
    - Access qBittorrent at `http://localhost:8080` (default: admin/adminadmin)
-   - Access SABnzbd at `http://localhost:8081`
+   - Access SABnzbd at `http://localhost:8085`
    - Access Prowlarr at `http://localhost:9696`
    - Access Jellyseerr at `http://localhost:5055` (optional)
 
@@ -164,7 +170,7 @@ To enable automated downloading from Usenet, you'll need subscriptions to both a
 
 #### 1. Configure SABnzbd (Usenet Downloader)
 
-Access SABnzbd at `http://localhost:8081`:
+Access SABnzbd at `http://localhost:8085`:
 
 **Server Setup:**
 - Go to Config → Servers → Add Server
@@ -194,13 +200,17 @@ Access Prowlarr at `http://localhost:9696`:
 
 **Sync to Apps:**
 - Settings → Apps → Add Application → Sonarr
-  - Prowlarr Server: `http://localhost:9696`
-  - Sonarr Server: `http://sonarr:8989`
+  - Prowlarr Server: `http://prowlarr:9696` (how Sonarr reaches Prowlarr)
+  - Sonarr Server: `http://sonarr:8989` (how Prowlarr reaches Sonarr)
   - API Key: (get from Sonarr → Settings → General)
 - Settings → Apps → Add Application → Radarr
-  - Prowlarr Server: `http://localhost:9696`
-  - Radarr Server: `http://radarr:7878`
+  - Prowlarr Server: `http://prowlarr:9696` (how Radarr reaches Prowlarr)
+  - Radarr Server: `http://radarr:7878` (how Prowlarr reaches Radarr)
   - API Key: (get from Radarr → Settings → General)
+- Settings → Apps → Add Application → Readarr
+  - Prowlarr Server: `http://prowlarr:9696` (how Readarr reaches Prowlarr)
+  - Radarr Server: `http://readarr:8787` (how Prowlarr reaches Readarr)
+  - API Key: (get from Readarr → Settings → General)
 
 #### 3. Configure Sonarr (TV Shows)
 
@@ -208,8 +218,8 @@ Access Sonarr at `http://localhost:8989`:
 
 **Download Client:**
 - Settings → Download Clients → Add → SABnzbd
-- Host: `sabnzbd`
-- Port: `8080`
+- Host: `sabnzbd` (SABnzbd container name)
+- Port: `8085`
 - API Key: (from SABnzbd → Config → General)
 - Category: `tv`
 - Test and save
@@ -226,8 +236,8 @@ Access Radarr at `http://localhost:7878`:
 
 **Download Client:**
 - Settings → Download Clients → Add → SABnzbd
-- Host: `sabnzbd`
-- Port: `8080`
+- Host: `sabnzbd` (SABnzbd container name)
+- Port: `8085`
 - API Key: (from SABnzbd settings)
 - Category: `movies`
 - Test and save
@@ -238,15 +248,33 @@ Access Radarr at `http://localhost:7878`:
 - Enable "Use Hardlinks instead of Copy"
 - Enable "Import Extra Files"
 
+#### 5. Configure Readarr (Books)
+
+Access Readarr at `http://localhost:8787`:
+
+**Download Client:**
+- Settings → Download Clients → Add → SABnzbd
+- Host: `sabnzbd` (SABnzbd container name)
+- Port: `8085`
+- API Key: (from SABnzbd settings)
+- Category: `books`
+- Test and save
+
+**Media Management:**
+- Settings → Media Management
+- Root Folder: `/books`
+- Enable "Use Hardlinks instead of Copy"
+- Book File Naming: Configure preferred naming scheme
+
 ### Automated Workflow
 
 Once configured, the complete automation workflow is:
 
-1. **Request**: Add TV show in Sonarr or movie in Radarr (or via Jellyseerr)
-2. **Search**: Sonarr/Radarr automatically search indexers via Prowlarr
+1. **Request**: Add TV show in Sonarr, movie in Radarr, or book in Readarr (or via Jellyseerr)
+2. **Search**: Sonarr/Radarr/Readarr automatically search indexers via Prowlarr
 3. **Download**: Best match sent to SABnzbd for downloading via VPN
 4. **Extract**: SABnzbd downloads and extracts to `/downloads/complete/`
-5. **Import**: Sonarr/Radarr automatically move/rename to organized library
+5. **Import**: Sonarr/Radarr/Readarr automatically move/rename to organized library
 6. **Serve**: Jellyfin immediately sees new content in `/media/`
 
 ### Testing the Setup

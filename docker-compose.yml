@@ -12,7 +12,7 @@ services:
       - "8080:8080"   # qBittorrent WebUI
       - "6881:6881"   # qBittorrent incoming connections
       - "6881:6881/udp"
-      - "8081:8081"   # SABnzbd WebUI
+      - "8085:8085"   # SABnzbd WebUI
       - "9696:9696"   # Prowlarr WebUI
     volumes:
       - /data/arr/config/gluetun:/gluetun
@@ -105,7 +105,23 @@ services:
       - /data/arr/downloads:/downloads
       - /data/arr/media/movies:/movies
 
-  # Media Server (Host Network)
+  # Book Management
+  readarr:
+    image: ghcr.io/hotio/readarr:latest
+    container_name: readarr
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - /data/arr/config/readarr:/config
+      - /data/arr/downloads:/downloads
+      - /data/arr/media/books:/books
+
+  # Media Server
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
@@ -132,7 +148,7 @@ services:
               count: 1
               capabilities: [gpu]
 
-  # Request Management (Host Network) - Optional
+  # Request Management - Optional
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
